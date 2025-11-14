@@ -1,0 +1,55 @@
+{
+  "name": "blockchain",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "nodemon --exec next dev",
+    "build": "next build",
+    "start": "next start",
+    "format": "prettier --write .",
+    "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
+    "lint:fix": "eslint . --ext .js,.jsx,.ts,.tsx --fix",
+    "format:check": "prettier --check ."
+  },
+  "dependencies": {
+    "@iconify/react": "^6.0.0",
+    "@radix-ui/react-dialog": "^1.1.15",
+    "@radix-ui/react-dropdown-menu": "^2.1.16",
+    "@reduxjs/toolkit": "^2.8.2",
+    "@tonconnect/sdk": "^3.3.1",
+    "@tonconnect/ui-react": "^2.3.1",
+    "@walletconnect/modal": "^2.7.0",
+    "axios": "^1.12.2",
+    "clsx": "^2.1.1",
+    "lucide-react": "^0.539.0",
+    "next": "^14.2.15",
+    "nodeman": "^1.1.2",
+    "nodemon": "^3.1.10",
+    "qrcode.react": "^4.2.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-redux": "^9.2.0",
+    "siwe": "^3.0.0",
+    "swiper": "^11.2.10",
+    "tailwind-merge": "^3.3.1"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3",
+    "@types/node": "^20",
+    "@types/react": "^18",
+    "@types/react-dom": "^18",
+    "autoprefixer": "^10.4.21",
+    "eslint": "^8.57.0",
+    "eslint-config-next": "^14.2.15",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.4",
+    "postcss": "^8.5.6",
+    "prettier": "^3.6.2",
+    "tailwindcss": "^3.4.17",
+    "tailwindcss-animate": "^1.0.7",
+    "typescript": "^5"
+  },
+  "engines": {
+    "node": "22.x"
+  }
+}
