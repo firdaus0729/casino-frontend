@@ -188,23 +188,36 @@ export default function AuthModal() {
       let errorMessage = 'An error occurred'
       let errorCode = null
       
+      // Use extractErrorMessage utility for consistent error handling
       if (typeof err === 'string') {
         errorMessage = err
       } else if (err && typeof err === 'object') {
-        // Try to extract from various possible locations
-        if ('message' in err && typeof err.message === 'string') {
-          errorMessage = err.message
-        } else if ('response' in err && err.response && typeof err.response === 'object') {
-          const response = err.response as any
-          if (response.data) {
-            if (response.data.message) {
-              errorMessage = response.data.message
+        // Check if it's an Axios error with a proper message
+        if ('isAxiosError' in err && err.isAxiosError) {
+          // Import extractErrorMessage dynamically to avoid circular dependency
+          const { extractErrorMessage } = require('@/lib/error-utils')
+          errorMessage = extractErrorMessage(err, 'Login failed')
+          
+          // Extract error code if available
+          if (err.response?.data) {
+            errorCode = err.response.data.errorCode || err.response.data.code || null
+          }
+        } else {
+          // Try to extract from various possible locations
+          if ('message' in err && typeof err.message === 'string') {
+            errorMessage = err.message
+          } else if ('response' in err && err.response && typeof err.response === 'object') {
+            const response = err.response as any
+            if (response.data) {
+              if (response.data.message) {
+                errorMessage = response.data.message
+              }
+              if (response.data.errorCode || response.data.code) {
+                errorCode = response.data.errorCode || response.data.code
+              }
+            } else if (response.data && response.data.error) {
+              errorMessage = response.data.error
             }
-            if (response.data.errorCode || response.data.code) {
-              errorCode = response.data.errorCode || response.data.code
-            }
-          } else if (response.data && response.data.error) {
-            errorMessage = response.data.error
           }
         }
       }
@@ -215,7 +228,12 @@ export default function AuthModal() {
         // Switch to registration tab
         setIsLogin(false)
       } else {
-        showError('Error', errorMessage)
+        // For network errors, provide more helpful message
+        if (errorMessage.toLowerCase().includes('network') || errorMessage.toLowerCase().includes('connect')) {
+          showError('Connection Error', 'Cannot connect to server. Please ensure the backend is running and check your internet connection.')
+        } else {
+          showError('Error', errorMessage)
+        }
       }
     } finally {
       setIsSubmitting(false)

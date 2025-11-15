@@ -92,15 +92,21 @@ axiosInstance.interceptors.response.use(
     if (!error.response && error.message) {
       const isNetworkError = error.message.includes('Network Error') || 
                             error.message.includes('ERR_NETWORK') ||
-                            error.message.includes('fetch failed')
+                            error.message.includes('fetch failed') ||
+                            error.code === 'ERR_NETWORK' ||
+                            error.code === 'ECONNREFUSED'
       
       if (isNetworkError) {
         const baseURL = error.config?.baseURL || API_BASE_URL_FOR_ERROR
-        console.error(`Network Error: Cannot connect to backend at ${baseURL}`)
-        console.error('Please ensure:')
-        console.error('1. Backend server is running (npm run dev in ok777-backend-main)')
-        console.error('2. Backend is accessible at:', baseURL)
-        console.error('3. CORS is properly configured in backend')
+        console.error(`❌ Network Error: Cannot connect to backend at ${baseURL}`)
+        console.error('🔍 Troubleshooting steps:')
+        console.error('1. Ensure backend server is running:')
+        console.error('   - Local: cd ok777-backend-main && npm run dev')
+        console.error('   - Railway: Check deployment status in Railway dashboard')
+        console.error(`2. Verify backend is accessible at: ${baseURL}`)
+        console.error('3. Check CORS configuration in backend (src/app.ts)')
+        console.error('4. Verify NEXT_PUBLIC_API_BASE_URL environment variable is set correctly')
+        console.error('5. Check browser console for CORS errors')
       }
     }
     

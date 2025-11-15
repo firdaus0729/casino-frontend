@@ -110,6 +110,24 @@ export const extractErrorMessage = (error: unknown, fallbackMessage: string = 'A
       }
     }
     
+    // Handle network errors (no response from server)
+    if (!axiosError.response && axiosError.request) {
+      const isNetworkError = axiosError.message.includes('Network Error') || 
+                            axiosError.message.includes('ERR_NETWORK') ||
+                            axiosError.message.includes('fetch failed') ||
+                            axiosError.code === 'ECONNABORTED' ||
+                            axiosError.code === 'ERR_NETWORK'
+      
+      if (isNetworkError) {
+        return 'Cannot connect to server. Please check your internet connection and ensure the backend server is running.'
+      }
+      
+      // Handle timeout errors
+      if (axiosError.code === 'ECONNABORTED' || axiosError.message.includes('timeout')) {
+        return 'Request timed out. The server is taking too long to respond. Please try again.'
+      }
+    }
+    
     // Fallback to Axios error message
     return axiosError.message || fallbackMessage
   }

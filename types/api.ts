@@ -24,6 +24,12 @@ const normalizeApiUrl = (url: string | undefined): string => {
 
 export const API_BASE_URL = normalizeApiUrl(process.env.NEXT_PUBLIC_API_BASE_URL)
 
+// Log API base URL in development for debugging
+if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
+  console.log('🌐 API Base URL:', API_BASE_URL)
+  console.log('📝 NEXT_PUBLIC_API_BASE_URL env var:', process.env.NEXT_PUBLIC_API_BASE_URL || 'not set (using default localhost:4000)')
+}
+
 // Common API Response Structure
 export interface ApiResponse<T = any> {
   code: number

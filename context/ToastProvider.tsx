@@ -25,13 +25,25 @@ export const ToastProvider: React.FC<ToastProviderProps> = ({ children }) => {
   }, [])
 
   const showToast = useCallback((toast: Omit<Toast, 'id'>) => {
-    const id = Math.random().toString(36).substr(2, 9)
-    const newToast: Toast = {
-      ...toast,
-      id,
-      duration: toast.duration ?? 5000, // Default 5 seconds
-    }
-    setToasts(prev => [...prev, newToast])
+    // Prevent duplicate toasts with same title and message
+    setToasts(prev => {
+      const isDuplicate = prev.some(
+        t => t.title === toast.title && t.message === toast.message && t.type === toast.type
+      )
+      
+      if (isDuplicate) {
+        // If duplicate exists, don't add another one
+        return prev
+      }
+      
+      const id = Math.random().toString(36).substr(2, 9)
+      const newToast: Toast = {
+        ...toast,
+        id,
+        duration: toast.duration ?? 5000, // Default 5 seconds
+      }
+      return [...prev, newToast]
+    })
   }, [])
 
   const showSuccess = useCallback((title: string, message: string, duration?: number) => {
