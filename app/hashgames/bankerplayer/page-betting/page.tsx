@@ -6,8 +6,7 @@ import { User } from '@/components/ui/icons'
 import useAuthGuard from '@/hooks/useAuthGuard'
 import { useToast } from '@/context/ToastProvider'
 import { apiService } from '@/lib/api'
-import { useAppSelector, useAppDispatch } from '@/store/hooks'
-import { fetchWalletInfo } from '@/store/slices/walletSlice'
+import { useAppSelector } from '@/store/hooks'
 import { Check } from 'lucide-react'
 import { PokerChip } from '@/components/ui/chipSelector/PokerChip'
 
@@ -26,13 +25,7 @@ interface BettingOption {
 const BankerPlayerBettingPage: React.FC = () => {
   const { isAuthenticated } = useAuthGuard()
   const { showSuccess, showError, showWarning } = useToast()
-  const dispatch = useAppDispatch()
   const { token } = useAppSelector(state => state.auth)
-  const { balances, isLoading: walletLoading } = useAppSelector(state => state.wallet)
-  
-  // Get USD balance
-  const usdBalance = balances.find(b => b.currency?.toUpperCase() === 'USD')?.amount || 0
-  const displayBalance = typeof usdBalance === 'number' && Number.isFinite(usdBalance) ? usdBalance : 0
   
   // State management
   const [selectedBetType, setSelectedBetType] = useState<BetType>(null)
@@ -44,16 +37,10 @@ const BankerPlayerBettingPage: React.FC = () => {
     { type: 'tie', color: 'malachite', ratio: '1 : 8', percent: 0, totalAmount: 7592, playerCount: 11, userBet: 0 },
     { type: 'player', color: 'yellow-orange', ratio: '1 : 1.95', percent: 0, totalAmount: 7592, playerCount: 11, userBet: 0 },
   ])
-  const [pendingBets, setPendingBets] = useState<Array<{ type: BetType; amount: number }>>([])
   const [currentBlock, setCurrentBlock] = useState<number>(73852830)
   const [nextBlock, setNextBlock] = useState<number>(73872867)
 
-  // Fetch wallet balance on mount
-  useEffect(() => {
-    if (isAuthenticated) {
-      dispatch(fetchWalletInfo())
-    }
-  }, [isAuthenticated, dispatch])
+  // No need to fetch wallet balance - betting works without balance
 
   // Handle chip selection from global chip selector
   useEffect(() => {
@@ -111,11 +98,8 @@ const BankerPlayerBettingPage: React.FC = () => {
       return
     }
 
-    // Check if user has sufficient balance
-    if (displayBalance < betAmount) {
-      showError('Error', `Insufficient balance. Your balance is $${displayBalance.toFixed(2)}`)
-      return
-    }
+    // No balance check - allow betting with $0 balance
+    // Bets are recorded and wins/losses are tracked, but balance is not modified
 
     setIsPlacingBet(true)
 
@@ -138,9 +122,6 @@ const BankerPlayerBettingPage: React.FC = () => {
         type: betTypeMap[betType],
       })
 
-      // Add to pending bets
-      setPendingBets(prev => [...prev, { type: selectedBetType, amount: betAmount }])
-
       // Update betting options UI
       setBettingOptions(prev => prev.map(option => {
         if (option.type === selectedBetType) {
@@ -156,9 +137,6 @@ const BankerPlayerBettingPage: React.FC = () => {
 
       showSuccess('Success', `Bet placed successfully on ${betType.toUpperCase()}!`)
       
-      // Refresh wallet balance after successful bet
-      await dispatch(fetchWalletInfo())
-      
       // Reset selection
       setSelectedBetType(null)
       setBetAmount(0)
@@ -170,28 +148,6 @@ const BankerPlayerBettingPage: React.FC = () => {
     }
   }
 
-  // Handle undo (remove last pending bet)
-  const handleUndo = () => {
-    if (pendingBets.length === 0) return
-
-    const lastBet = pendingBets[pendingBets.length - 1]
-    setPendingBets(prev => prev.slice(0, -1))
-
-    // Update betting options
-    setBettingOptions(prev => prev.map(option => {
-      if (option.type === lastBet.type) {
-        return {
-          ...option,
-          userBet: Math.max(0, option.userBet - lastBet.amount),
-          totalAmount: Math.max(0, option.totalAmount - lastBet.amount),
-          playerCount: Math.max(0, option.playerCount - 1),
-        }
-      }
-      return option
-    }))
-
-    showSuccess('Success', 'Last bet undone')
-  }
 
   // Chips data
   const chips: Array<{
@@ -290,106 +246,29 @@ const BankerPlayerBettingPage: React.FC = () => {
         })}
       </div>
 
-      {/* Custom Chip Selector and Controls */}
-      <div className="flex justify-center items-center w-full mt-4">
-        <div
-          className="flex items-end gap-4 p-8 w-full rounded-xl"
-          style={{ background: 'rgba(255, 255, 255, 0.04)' }}
+      {/* Simple Betting Controls - Chips and Confirm */}
+      <div className="flex justify-center items-end gap-4 p-8 w-full rounded-xl" style={{ background: 'rgba(255, 255, 255, 0.04)' }}>
+        {chips.map(chip => (
+          <PokerChip
+            key={chip.id}
+            value={chip.value}
+            color={chip.color}
+            isSelected={selectedChip === chip.value}
+            onClick={() => handleChipClick(chip.value)}
+          />
+        ))}
+        <button
+          onClick={handleConfirmBet}
+          disabled={!selectedBetType || betAmount <= 0 || isPlacingBet}
+          className={`px-6 py-2 rounded-lg font-bold text-white transition-all ${
+            selectedBetType && betAmount > 0 && !isPlacingBet
+              ? 'bg-dodger-blue hover:bg-blue-600 cursor-pointer'
+              : 'bg-gray-600 text-gray-400 cursor-not-allowed'
+          }`}
         >
-          {/* Undo button section */}
-          <div className="flex flex-col justify-center items-end gap-1 flex-1 min-w-0 px-4">
-            <button
-              onClick={handleUndo}
-              disabled={pendingBets.length === 0}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg font-montserrat font-bold text-xs transition-colors ${
-                pendingBets.length > 0
-                  ? 'text-chip-casper hover:text-white cursor-pointer'
-                  : 'text-chip-casper/50 cursor-not-allowed'
-              }`}
-              style={{ background: 'rgba(0, 0, 0, 0.54)' }}
-            >
-              Undo
-              <svg
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M9 10H15C17.21 10 19 11.79 19 14C19 16.21 17.21 18 15 18H12V20H15C18.31 20 21 17.31 21 14C21 10.69 18.31 8 15 8H9V4L3 9L9 14V10Z"
-                  fill="currentColor"
-                />
-              </svg>
-            </button>
-          </div>
-
-          {/* Chips section */}
-          <div className="flex items-center gap-4">
-            {chips.map(chip => (
-              <PokerChip
-                key={chip.id}
-                value={chip.value}
-                color={chip.color}
-                isSelected={selectedChip === chip.value}
-                onClick={() => handleChipClick(chip.value)}
-              />
-            ))}
-          </div>
-
-          {/* Confirm button section */}
-          <div className="flex flex-col justify-center items-start gap-1 flex-1 min-w-0 px-4">
-            <button
-              onClick={handleConfirmBet}
-              disabled={!selectedBetType || betAmount <= 0 || isPlacingBet}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg font-montserrat font-bold text-xs transition-all ${
-                selectedBetType && betAmount > 0 && !isPlacingBet
-                  ? 'text-white hover:bg-dodger-blue cursor-pointer'
-                  : 'text-chip-casper/50 cursor-not-allowed'
-              }`}
-              style={{ background: 'rgba(0, 0, 0, 0.54)' }}
-            >
-              {isPlacingBet ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  Placing...
-                </>
-              ) : (
-                <>
-                  <Check className="w-4 h-4" />
-                  Confirm
-                </>
-              )}
-            </button>
-          </div>
-        </div>
+          {isPlacingBet ? 'Placing...' : 'Confirm'}
+        </button>
       </div>
-
-      {/* Balance Display */}
-      <div className="text-center mt-4 mb-2">
-        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-white/[0.08]">
-          <span className="text-sm text-casper">Balance:</span>
-          <span className="text-lg font-bold text-dodger-blue">
-            ${displayBalance.toFixed(2)}
-          </span>
-          {walletLoading && (
-            <div className="w-4 h-4 border-2 border-dodger-blue border-t-transparent rounded-full animate-spin" />
-          )}
-        </div>
-      </div>
-
-      {/* Bet Amount Display */}
-      {selectedBetType && betAmount > 0 && (
-        <div className="text-center mt-2">
-          <p className="text-sm text-casper">
-            Selected: <span className="text-white font-bold">{selectedBetType.toUpperCase()}</span> - 
-            Amount: <span className="text-dodger-blue font-bold">${betAmount}</span>
-            {displayBalance < betAmount && (
-              <span className="text-red-500 ml-2">(Insufficient balance)</span>
-            )}
-          </p>
-        </div>
-      )}
     </PageBettingLayout>
   )
 }

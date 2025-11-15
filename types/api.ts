@@ -226,6 +226,7 @@ export const API_ENDPOINTS = {
   ODD_EVEN_CURRENT_ROUND: '/api/v1/hashgames/oddeven/round/current',
   ODD_EVEN_BET: '/api/v1/hashgames/oddeven/bet',
   ODD_EVEN_ROUND_RESULT: '/api/v1/hashgames/oddeven/round',
+  BETTING_HISTORY: '/api/v1/games/betting-history',
 } as const
 
 // Request Configuration

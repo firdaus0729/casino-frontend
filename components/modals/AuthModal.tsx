@@ -473,6 +473,16 @@ export default function AuthModal() {
           console.warn('Failed to fetch profile after signup:', profileError)
           // Continue anyway since we have the token
         }
+        
+        // Fetch wallet info to get initial balance
+        try {
+          const { fetchWalletInfo } = await import('@/store/slices/walletSlice')
+          await dispatch(fetchWalletInfo()).unwrap()
+          console.log('✅ Wallet balance refreshed after registration')
+        } catch (walletError) {
+          console.warn('Failed to fetch wallet info after signup:', walletError)
+          // Continue anyway - Header will fetch it when navigating
+        }
       }
       
       toggleAuthModal()

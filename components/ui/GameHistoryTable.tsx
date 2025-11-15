@@ -1,37 +1,72 @@
 import { cn } from '@/lib/utils'
 import { ZoomIn, ZoomOut } from 'lucide-react'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { API_BASE_URL, API_ENDPOINTS } from '@/types/api'
 
-const GameHistoryTable = () => {
+interface GameHistoryTableProps {
+  gameId?: number // Game ID: 4 for Banker Player, 5 for Odd/Even, etc.
+}
+
+const GameHistoryTable = ({ gameId = 4 }: GameHistoryTableProps) => {
   const [zoomOneState, setZoomOneState] = useState(false)
   const [zoomTwoState, setZoomTwoState] = useState(false)
+  const [historydata, setHistorydata] = useState<string[]>([])
+  const [isLoading, setIsLoading] = useState(true)
 
-  const historydata = ['O', 'O', 'E', 'E', 'E', 'E']
+  // Fetch betting history from API
+  useEffect(() => {
+    const fetchHistory = async () => {
+      try {
+        setIsLoading(true)
+        const response = await fetch(
+          `${API_BASE_URL}${API_ENDPOINTS.BETTING_HISTORY}?game=${gameId}&limit=120`
+        )
+        const data = await response.json()
+        
+        if (data.code === 200 && data.data?.results) {
+          // Pad with empty strings to fill 120 slots
+          const results = data.data.results as string[]
+          const padded = [...results]
+          while (padded.length < 120) {
+            padded.push('')
+          }
+          setHistorydata(padded.slice(0, 120))
+        } else {
+          // Fallback to empty array if API fails
+          setHistorydata(Array(120).fill(''))
+        }
+      } catch (error) {
+        console.error('Error fetching betting history:', error)
+        // Fallback to empty array on error
+        setHistorydata(Array(120).fill(''))
+      } finally {
+        setIsLoading(false)
+      }
+    }
 
-  for (let i = 0; i < 120 - 6; i++) {
-    historydata.push('')
-  }
+    fetchHistory()
+    // Refresh every 5 seconds to get new results
+    const interval = setInterval(fetchHistory, 5000)
+    return () => clearInterval(interval)
+  }, [gameId])
 
-  const history_data = [
-    'r',
-    'r',
-    '',
-    '',
-    '',
-    '',
-    '',
-    '',
-    '',
-    '',
-    '',
-    '',
-    '',
-    'y',
-    '',
-    '',
-    '',
-  ]
-  for (let i = 0; i < 444 - 15; i++) {
+  // Generate history_data from historydata (for the detailed grid view)
+  // This creates a pattern based on the results
+  const history_data: string[] = []
+  historydata.forEach((label) => {
+    if (label === 'B' || label === 'O') {
+      history_data.push('r') // Red for Banker/Odd
+    } else if (label === 'P' || label === 'E') {
+      history_data.push('y') // Yellow for Player/Even
+    } else if (label === 'T') {
+      history_data.push('g') // Green for Tie
+    } else {
+      history_data.push('')
+    }
+  })
+  
+  // Pad to 444 items for the grid
+  while (history_data.length < 444) {
     history_data.push('')
   }
 
@@ -56,11 +91,13 @@ const GameHistoryTable = () => {
                 <div
                   className={cn(
                     'w-3 h-3 md:w-4 md:h-4 rounded-full flex items-center justify-center',
-                    label === 'O'
+                    label === 'B' || label === 'O'
                       ? 'bg-crimson'
-                      : label === 'E'
+                      : label === 'P' || label === 'E'
                         ? 'bg-yellow-orange'
-                        : ''
+                        : label === 'T'
+                          ? 'bg-malachite'
+                          : ''
                   )}
                 >
                   <span className="text-[10px] md:text-xs font-bold text-bunker">
@@ -95,7 +132,9 @@ const GameHistoryTable = () => {
                         ? 'border-crimson'
                         : item === 'y'
                           ? 'border-yellow-orange'
-                          : 'border-transparent'
+                          : item === 'g'
+                            ? 'border-malachite'
+                            : 'border-transparent'
                     )}
                   ></div>
                 </div>
@@ -120,20 +159,22 @@ const GameHistoryTable = () => {
                 key={i}
                 className="flex w-[30px] h-[30px] md:h-[35px] justify-center items-center bg-mirage"
               >
-                <div
-                  className={cn(
-                    'w-5 h-5 md:w-6 md:h-6 rounded-full flex items-center justify-center',
-                    label === 'O'
-                      ? 'bg-crimson'
-                      : label === 'E'
-                        ? 'bg-yellow-orange'
-                        : ''
-                  )}
-                >
-                  <span className="text-[10px] md:text-xs font-bold text-bunker">
-                    {label}
-                  </span>
-                </div>
+                  <div
+                    className={cn(
+                      'w-5 h-5 md:w-6 md:h-6 rounded-full flex items-center justify-center',
+                      label === 'B' || label === 'O'
+                        ? 'bg-crimson'
+                        : label === 'P' || label === 'E'
+                          ? 'bg-yellow-orange'
+                          : label === 'T'
+                            ? 'bg-malachite'
+                            : ''
+                    )}
+                  >
+                    <span className="text-[10px] md:text-xs font-bold text-bunker">
+                      {label}
+                    </span>
+                  </div>
               </div>
             ))}
           </div>
@@ -150,7 +191,9 @@ const GameHistoryTable = () => {
                         ? 'border-crimson'
                         : item === 'y'
                           ? 'border-yellow-orange'
-                          : 'border-transparent'
+                          : item === 'g'
+                            ? 'border-malachite'
+                            : 'border-transparent'
                     )}
                   ></div>
                 </div>

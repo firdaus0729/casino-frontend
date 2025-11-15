@@ -268,7 +268,7 @@ const PageBettingLayout: React.FC<PageBettingLayoutProps> = ({ children }) => {
           </div>
 
           {/* Grid */}
-          <GameHistoryTable />
+          <GameHistoryTable gameId={4} />
         </div>
       </div>
 
