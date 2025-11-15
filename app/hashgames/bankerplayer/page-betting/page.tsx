@@ -31,8 +31,8 @@ const BankerPlayerBettingPage: React.FC = () => {
   const { balances, isLoading: walletLoading } = useAppSelector(state => state.wallet)
   
   // Get USD balance
-  const usdBalance = balances.find(b => b.currency?.toUpperCase() === 'USD')?.amount || 100
-  const displayBalance = typeof usdBalance === 'number' && Number.isFinite(usdBalance) ? usdBalance : 100
+  const usdBalance = balances.find(b => b.currency?.toUpperCase() === 'USD')?.amount || 0
+  const displayBalance = typeof usdBalance === 'number' && Number.isFinite(usdBalance) ? usdBalance : 0
   
   // State management
   const [selectedBetType, setSelectedBetType] = useState<BetType>(null)
