@@ -26,12 +26,18 @@ const GameHistoryTable = ({ gameId = 4 }: GameHistoryTableProps) => {
         if (data.code === 200 && data.data?.results) {
           // Pad with empty strings to fill 120 slots
           const results = data.data.results as string[]
+          console.log('📊 GameHistoryTable: Received results:', results.slice(0, 20))
+          console.log('📊 GameHistoryTable: T count:', results.filter(r => r === 'T').length)
+          console.log('📊 GameHistoryTable: B count:', results.filter(r => r === 'B').length)
+          console.log('📊 GameHistoryTable: P count:', results.filter(r => r === 'P').length)
+          
           const padded = [...results]
           while (padded.length < 120) {
             padded.push('')
           }
           setHistorydata(padded.slice(0, 120))
         } else {
+          console.warn('⚠️ GameHistoryTable: API response invalid', data)
           // Fallback to empty array if API fails
           setHistorydata(Array(120).fill(''))
         }
@@ -97,12 +103,16 @@ const GameHistoryTable = ({ gameId = 4 }: GameHistoryTableProps) => {
                         ? 'bg-yellow-orange'
                         : label === 'T'
                           ? 'bg-malachite'
-                          : ''
+                          : label === ''
+                            ? ''
+                            : 'bg-gray-500' // Debug: show unknown labels
                   )}
                 >
-                  <span className="text-[10px] md:text-xs font-bold text-bunker">
-                    {label}
-                  </span>
+                  {label && (
+                    <span className="text-[10px] md:text-xs font-bold text-bunker">
+                      {label}
+                    </span>
+                  )}
                 </div>
               </div>
             ))}
@@ -168,12 +178,16 @@ const GameHistoryTable = ({ gameId = 4 }: GameHistoryTableProps) => {
                           ? 'bg-yellow-orange'
                           : label === 'T'
                             ? 'bg-malachite'
-                            : ''
+                            : label === ''
+                              ? ''
+                              : 'bg-gray-500' // Debug: show unknown labels
                     )}
                   >
-                    <span className="text-[10px] md:text-xs font-bold text-bunker">
-                      {label}
-                    </span>
+                    {label && (
+                      <span className="text-[10px] md:text-xs font-bold text-bunker">
+                        {label}
+                      </span>
+                    )}
                   </div>
               </div>
             ))}
